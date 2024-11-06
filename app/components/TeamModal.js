@@ -1,12 +1,34 @@
 "use client";
-import React, { useState } from "react";
-import axios from "axios";
+import { useState, useEffect } from "react";
+import axiosInstance from "@/lib/apiClient";
+import { toast } from "react-toastify";
 
 const TeamModal = ({ isOpen, closeModal, fetchTeams }) => {
   const [teamName, setTeamName] = useState("");
   const [agencyId, setAgencyId] = useState("");
   const [teamLeadId, setTeamLeadId] = useState("");
   const [members, setMembers] = useState([{ email: "" }]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [agencies, setAgencies] = useState([]);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const fetchAgencies = async () => {
+      setIsLoading(true);
+      try {
+        const response = await axiosInstance.get("/agencies/adminAgencies");
+        setAgencies(response.data);
+        console.log("Fetched agencies:", response.data);
+      } catch (err) {
+        console.error("Error fetching agencies:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAgencies();
+  }, [isOpen]);
 
   const handleMemberChange = (index, value) => {
     const newMembers = [...members];
@@ -15,42 +37,43 @@ const TeamModal = ({ isOpen, closeModal, fetchTeams }) => {
   };
 
   const addMemberInput = () => {
+    const lastMemberEmail = members[members.length - 1].email;
+    if (lastMemberEmail.trim() === "") {
+      setMessage("Previous box is empty!");
+      return;
+    }
+    setMessage("");
     setMembers([...members, { email: "" }]);
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const teamData = {
         team_name: teamName,
         agency_id: agencyId,
-        team_lead_user_id: teamLeadId,
+        team_lead_email: teamLeadId,
         members: members.map((member) => member.email).filter((email) => email),
       };
-      const token = localStorage.getItem("token");
-      await axios.post(
-        "http://localhost:5000/api/teams/create-team",
-        teamData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+
+      const res = await axiosInstance.post("/teams/create-team", teamData);
+
       fetchTeams();
       closeModal();
-      alert("Team created successfully!");
-    } catch (error) {
-      console.error("Error creating team:", error);
-      alert("Error creating team:", error);
+      if (res.status === 201) {
+        toast.success("Team created successfully!");
+      } else {
+        toast.warning(res.data.message);
+      }
+    } catch (err) {
+      console.error("Error creating team:", err);
     }
   };
-
   const handleCloseModal = () => {
     setTeamName("");
     setAgencyId("");
     setTeamLeadId("");
     setMembers([{ email: "" }]);
+    setMessage("");
     closeModal();
   };
 
@@ -76,19 +99,29 @@ const TeamModal = ({ isOpen, closeModal, fetchTeams }) => {
             />
           </div>
           <div className="mb-4">
-            <label className="block text-black mb-1">Agency ID</label>
-            <input
-              type="text"
+            <label className="block text-black mb-1">Select Agency</label>
+            <select
               value={agencyId}
               onChange={(e) => setAgencyId(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full p-3 text-black border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 bg-white cursor-pointer"
               required
-            />
+            >
+              <option value="" disabled>
+                Select an agency
+              </option>
+              {agencies.map((agency) => (
+                <option key={agency.agency_id} value={agency.agency_id}>
+                  {agency.agency_name}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="mb-4">
-            <label className="block text-black mb-1">Team Lead User ID</label>
+            <label className="block text-black mb-1">
+              Team Lead User Email
+            </label>
             <input
-              type="text"
+              type="email"
               value={teamLeadId}
               onChange={(e) => setTeamLeadId(e.target.value)}
               className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -103,15 +136,20 @@ const TeamModal = ({ isOpen, closeModal, fetchTeams }) => {
                 type="email"
                 value={member.email}
                 onChange={(e) => handleMemberChange(index, e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded mb-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                className={`w-full p-3 border border-gray-300 rounded mb-2 focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                  message && index === members.length - 1
+                    ? "border-red-500"
+                    : ""
+                }`}
                 placeholder="Member Email"
                 required
               />
             ))}
+            {message && <p className="text-red-500 text-sm">{message}</p>}
             <button
               type="button"
               onClick={addMemberInput}
-              className="text-[#0077B5] hover:underline"
+              className="text-[#0077B5] hover:underline mt-2"
             >
               + Add Another Member
             </button>

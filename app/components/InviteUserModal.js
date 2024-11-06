@@ -1,37 +1,33 @@
-"use client";
-
 import { useState } from "react";
-import axios from "axios";
+import axiosInstance from "@/lib/apiClient";
+import { toast } from "react-toastify";
 
-export default function InviteUserModal({ closeModal }) {
+export default function InviteUserModal({ closeModal, setSentInvitations }) {
   const [email, setEmail] = useState("");
-  const [agencyId, setAgencyId] = useState("");
+  const [agencyName, setAgencyName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
   const handleInviteSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    const token = localStorage.getItem("token");
 
     try {
-      await axios.post(
-        "http://localhost:5000/api/agencies/invite",
-        {
-          recipient_email: email,
-          agency_id: agencyId,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await axiosInstance.post("/agencies/invite", {
+        recipient_email: email,
+        agency_name: agencyName,
+      });
 
-      alert("Invitation sent successfully!");
+      const newInvitation = response.data.newInvitation;
+      console.log(newInvitation);
+      setSentInvitations((prevInvitations) => [
+        ...prevInvitations,
+        newInvitation,
+      ]);
+
+      toast.success("Invitation sent successfully!");
       closeModal();
     } catch (error) {
       console.error("Error sending invitation:", error);
-      alert("Failed to send invitation.");
+      toast.error("Failed to send invitation.");
     } finally {
       setIsLoading(false);
     }
@@ -53,12 +49,12 @@ export default function InviteUserModal({ closeModal }) {
             />
           </div>
           <div className="mb-4">
-            <label className="block text-gray-700">Agency ID</label>
+            <label className="block text-gray-700">Agency Name</label>
             <input
               type="text"
               className="w-full p-2 border border-gray-300 rounded mt-1"
-              value={agencyId}
-              onChange={(e) => setAgencyId(e.target.value)}
+              value={agencyName}
+              onChange={(e) => setAgencyName(e.target.value)}
               required
             />
           </div>

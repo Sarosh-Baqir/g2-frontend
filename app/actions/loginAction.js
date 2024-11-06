@@ -7,11 +7,17 @@ export const loginUser = async (email, password) => {
       password,
     });
 
-    const { token, user } = response.data;
-    localStorage.setItem("token", token);
+    // Destructure both tokens from the response
+    const { accessToken, refreshToken, user } = response.data;
+    // Store both tokens in local storage
+    localStorage.setItem("accessToken", accessToken);
+    localStorage.setItem("refreshToken", refreshToken);
     localStorage.setItem("user", JSON.stringify(user));
-    console.log(token);
-    return { token, user };
+
+    console.log("Access Token:", accessToken);
+    console.log("Refresh Token:", refreshToken);
+
+    return { accessToken, refreshToken, user };
   } catch (error) {
     throw new Error(error.response.data.message || "Login failed");
   }

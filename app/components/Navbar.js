@@ -1,12 +1,15 @@
+// components/Navbar.js
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../context/authContext";
 
 const Navbar = () => {
   const router = useRouter();
+  const { token, logout } = useAuth();
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    logout();
     router.push("/login");
   };
 
@@ -17,15 +20,23 @@ const Navbar = () => {
           <h1 className="text-white text-2xl font-bold">Your Network</h1>
         </Link>
         <div className="flex items-center gap-4">
-          <Link href="/login" className="text-white hover:underline">
-            Login
-          </Link>
-          <Link href="/signup" className="text-white hover:underline">
-            Signup
-          </Link>
-          <button onClick={handleLogout} className="text-white hover:underline">
-            Logout
-          </button>
+          {token ? (
+            <button
+              onClick={handleLogout}
+              className="text-white hover:underline"
+            >
+              Logout
+            </button>
+          ) : (
+            <>
+              <Link href="/login" className="text-white hover:underline">
+                Login
+              </Link>
+              <Link href="/signup" className="text-white hover:underline">
+                Signup
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </nav>

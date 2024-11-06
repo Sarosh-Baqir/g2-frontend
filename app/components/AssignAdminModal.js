@@ -1,29 +1,24 @@
 import React, { useState } from "react";
-import axios from "axios";
+import axiosInstance from "@/lib/apiClient";
+import { toast } from "react-toastify";
 
-const AssignAdminModal = ({ isOpen, onClose, agencyId }) => {
+const AssignAdminModal = ({ isOpen, onClose, agencyId, updateTotalAdmins }) => {
   const [userEmail, setUserEmail] = useState("");
-
   const handleAssignAdmin = () => {
-    const token = localStorage.getItem("token");
-    axios
-      .post(
-        "http://localhost:5000/api/users/assign-admin",
-        { agency_id: agencyId, user_email: userEmail },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
+    axiosInstance
+      .post("/users/assign-admin", {
+        agency_id: agencyId,
+        user_email: userEmail,
+      })
       .then((response) => {
-        alert(response.data.message);
+        toast.success("Admin assigned successfully");
         setUserEmail("");
         onClose();
+        updateTotalAdmins(agencyId);
       })
-      .catch((error) => {
-        console.error("Error assigning admin:", error);
-        alert(error.response.data.message || "Error assigning admin");
+      .catch((err) => {
+        console.error("Error assigning admin:", err);
+        toast.error(error.response?.data?.message || "Error assigning admin");
       });
   };
 
@@ -32,7 +27,7 @@ const AssignAdminModal = ({ isOpen, onClose, agencyId }) => {
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
-        <h2 className="text-lg text-blue-700 font-semibold mb-4">
+        <h2 className="text-lg text-[#0077B5] font-semibold mb-4">
           Assign Admin
         </h2>
         <input
@@ -44,7 +39,7 @@ const AssignAdminModal = ({ isOpen, onClose, agencyId }) => {
         />
         <div className="flex justify-end space-x-2">
           <button
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg transition-all duration-200 hover:bg-blue-500"
+            className="bg-[#0077B5] text-white px-4 py-2 rounded-lg transition-all duration-200"
             onClick={handleAssignAdmin}
             disabled={!userEmail}
           >

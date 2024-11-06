@@ -4,12 +4,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { loginUser } from "../actions/loginAction";
+import { useAuth } from "../context/authContext";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
+  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,7 +20,11 @@ export default function LoginForm() {
     try {
       const userData = await loginUser(email, password);
       if (userData) {
-        router.push("/dashboard");
+        const token = localStorage.getItem("accessToken");
+        console.log("Retrieved token from localStorage:", token);
+        // Update the auth context state
+        login(token);
+        router.push("/dashboard/agencies");
       }
     } catch (err) {
       setError(err.message);
